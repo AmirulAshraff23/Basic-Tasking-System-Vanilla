@@ -1,5 +1,8 @@
 let tasks = [];
 let nextId = 1;
+let currentPage = 1;
+const tasksPerPage = 20; // Number of tasks to display per page
+
 
 document.getElementById('taskForm').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -53,8 +56,6 @@ function checkCircularDependency(currentId, targetId) {
     return checkCircularDependency(currentTask.parentId, targetId);
 }
 
-let currentPage = 1;
-const tasksPerPage = 5; // Number of tasks to display per page
 
 function renderTasks() {
     const taskList = document.getElementById('taskList');
