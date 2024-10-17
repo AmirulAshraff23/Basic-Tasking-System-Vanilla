@@ -2,6 +2,7 @@ let tasks = [];
 let nextId = 1;
 let currentPage = 1;
 const tasksPerPage = 10; // Number of tasks to display per page
+//deleteButton.classList.add('delete-button');
 
 
 document.getElementById('taskForm').addEventListener('submit', function (event) {
@@ -175,6 +176,7 @@ function createTaskElement(task, taskMap) {
     // Create an edit button
     const editButton = document.createElement('button');
     editButton.textContent = 'Rename'; // Initial text
+    editButton.style.marginLeft = '10px'; // Add margin for spacing
     editButton.addEventListener('click', () => {
         // Toggle visibility of display/input
         if (taskDisplay.style.display === 'none') {
@@ -199,6 +201,20 @@ function createTaskElement(task, taskMap) {
 
     li.prepend(checkbox);
     
+    // Create a delete button
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'X'; // Simple delete button
+    deleteButton.style.color = 'white'; // White text
+    deleteButton.style.backgroundColor = 'red'; // Red background
+    deleteButton.style.border = 'none'; // No border
+    deleteButton.style.borderRadius = '5px'; // Rounded corners
+    deleteButton.style.padding = '5px 10px'; // Padding for better appearance
+    deleteButton.style.marginLeft = '10px'; // Add margin for spacing
+    deleteButton.addEventListener('click', () => {
+        deleteTask(task.id); // Call delete function
+    });
+    li.appendChild(deleteButton);
+    
     // Create a nested list for child tasks
     if (taskMap[task.id].children.length > 0) {
         const childList = document.createElement('ul');
@@ -212,6 +228,11 @@ function createTaskElement(task, taskMap) {
     return li;
 }
 
+function deleteTask(taskId) {
+    // Remove the task from the tasks array
+    tasks = tasks.filter(task => task.id !== taskId);
+    renderTasks(); // Re-render the task list
+}
 
 function updateTask(taskId) {
     const taskName = document.getElementById('taskName').value.trim();

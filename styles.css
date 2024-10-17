@@ -43,6 +43,7 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    margin-left: 10px; /* Add margin to buttons */
 }
 
 button:hover {
@@ -65,4 +66,18 @@ li {
 .completed {
     text-decoration: line-through;
     color: gray;
+}
+
+.delete-button {
+    color: white; /* White text */
+    background-color: red; /* Red background */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 5px 10px; /* Padding for better appearance */
+    margin-left: 10px; /* Add margin for spacing */
+    cursor: pointer; /* Pointer cursor on hover */
+}
+
+.delete-button:hover {
+    background-color: darkred; /* Darker red on hover */
 }
