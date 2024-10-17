@@ -1,27 +1,40 @@
 let tasks = [];
 let nextId = 1;
 let currentPage = 1;
-const tasksPerPage = 20; // Number of tasks to display per page
+const tasksPerPage = 10; // Number of tasks to display per page
 
 
-document.getElementById('taskForm').addEventListener('submit', function(event) {
+document.getElementById('taskForm').addEventListener('submit', function (event) {
     event.preventDefault();
-    
+
     const taskName = document.getElementById('taskName').value.trim();
     const parentTaskId = document.getElementById('parentTaskId').value.trim();
-    addTask(taskName, parentTaskId);
-    document.getElementById('taskName').value = '';
-    document.getElementById('parentTaskId').value = '';
-    
+
     if (taskName) {
         if (isCircularDependency(parentTaskId)) {
             alert("Circular dependency detected!");
             return;
         }
-        
-        addTask(taskName, parentTaskId);
+
+        addTask(taskName, parentTaskId); // Only call this once
         document.getElementById('taskName').value = '';
         document.getElementById('parentTaskId').value = '';
+    }
+});
+
+document.getElementById('prevPage').addEventListener('click', () => {
+    const currentPage = getCurrentPage();
+    if (currentPage > 1) {
+        localStorage.setItem('currentPage', currentPage - 1);
+        renderTasks();
+    }
+});
+
+document.getElementById('nextPage').addEventListener('click', () => {
+    const currentPage = getCurrentPage();
+    const totalPages = getTotalPages(filterTasks());
+    if (currentPage < totalPages) {
+        localStorage.setItem('currentPage', currentPage + 1);
         renderTasks();
     }
 });
@@ -30,7 +43,7 @@ function addTask(taskName, parentTaskId) {
     const newTask = {
         id: Date.now(),
         name: taskName,
-        parentId: parentTaskId,
+        parentId: parentTaskId ? parseInt(parentTaskId) : null, // Set parentId if provided
         status: 'IN_PROGRESS'
     };
     tasks.push(newTask);
@@ -61,27 +74,33 @@ function checkCircularDependency(currentId, targetId) {
 
 
 function renderTasks() {
+    console.log('Rendering tasks...');
     const taskList = document.getElementById('taskList');
     taskList.innerHTML = ''; // Clear the current list
 
     const filteredTasks = filterTasks();
     const taskMap = createTaskMap(filteredTasks);
-    
-    // Calculate start and end indices for pagination
-    const startIndex = (currentPage - 1) * tasksPerPage;
-    const endIndex = startIndex + tasksPerPage;
-    const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
+    const currentPage = getCurrentPage(); // Get the current page number
+    const totalPages = getTotalPages(filteredTasks); // Get the total number of pages
 
     // Render top-level tasks
-    paginatedTasks.forEach(task => {
+    const tasksPerPage = 5; // Number of tasks per page
+    const startTaskIndex = (currentPage - 1) * tasksPerPage;
+    const endTaskIndex = startTaskIndex + tasksPerPage;
+    const tasksToRender = filteredTasks.slice(startTaskIndex, endTaskIndex);
+
+    tasksToRender.forEach(task => {
         if (!task.parentId) {
             const taskElement = createTaskElement(task, taskMap);
             taskList.appendChild(taskElement);
         }
     });
 
-    // Add pagination controls
-    updatePaginationControls(filteredTasks.length);
+    // Update pagination controls
+    const pageNumberElement = document.getElementById('pageNumber');
+    pageNumberElement.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    console.log('Tasks rendered.');
 }
 
 function updatePaginationControls(totalTasks) {
@@ -89,7 +108,7 @@ function updatePaginationControls(totalTasks) {
     paginationControls.innerHTML = ''; // Clear existing controls
 
     const totalPages = Math.ceil(totalTasks / tasksPerPage);
-    
+
     const prevButton = document.createElement('button');
     prevButton.textContent = 'Previous';
     prevButton.disabled = currentPage === 1;
@@ -100,7 +119,7 @@ function updatePaginationControls(totalTasks) {
         }
     });
     paginationControls.appendChild(prevButton);
-    
+
     const nextButton = document.createElement('button');
     nextButton.textContent = 'Next';
     nextButton.disabled = currentPage === totalPages;
@@ -111,6 +130,17 @@ function updatePaginationControls(totalTasks) {
         }
     });
     paginationControls.appendChild(nextButton);
+}
+
+function getCurrentPage() {
+    const currentPage = parseInt(localStorage.getItem('currentPage')) || 1;
+    return currentPage;
+}
+
+function getTotalPages(tasks) {
+    const tasksPerPage = 10; // Number of tasks per page
+    const totalPages = Math.ceil(tasks.length / tasksPerPage);
+    return totalPages;
 }
 
 function createTaskMap(tasks) {
@@ -129,8 +159,39 @@ function createTaskMap(tasks) {
 
 function createTaskElement(task, taskMap) {
     const li = document.createElement('li');
-    li.textContent = `${task.id}: ${task.name} - ${task.status}`;
+    
+    // Create a span to display the task name
+    const taskDisplay = document.createElement('span');
+    taskDisplay.textContent = task.name;
+    li.appendChild(taskDisplay);
 
+    // Create an input for task name (initially hidden)
+    const taskInput = document.createElement('input');
+    taskInput.type = 'text';
+    taskInput.value = task.name;
+    taskInput.style.display = 'none'; // Hide initially
+    li.appendChild(taskInput);
+
+    // Create an edit button
+    const editButton = document.createElement('button');
+    editButton.textContent = 'Rename'; // Initial text
+    editButton.addEventListener('click', () => {
+        // Toggle visibility of display/input
+        if (taskDisplay.style.display === 'none') {
+            taskDisplay.style.display = 'inline'; // Show display
+            taskInput.style.display = 'none'; // Hide input
+            editButton.textContent = 'Rename'; // Reset button text
+            updateTaskName(task.id, taskInput.value); // Update on save
+        } else {
+            taskDisplay.style.display = 'none'; // Hide display
+            taskInput.style.display = 'inline'; // Show input
+            taskInput.focus(); // Focus on input for editing
+            editButton.textContent = 'Confirm'; // Change button text to Confirm
+        }
+    });
+    li.appendChild(editButton);
+
+    // Create a checkbox for task status
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = task.status === 'DONE';
@@ -138,16 +199,6 @@ function createTaskElement(task, taskMap) {
 
     li.prepend(checkbox);
     
-    // Create edit button
-    const editButton = document.createElement('button');
-    editButton.textContent = 'Edit';
-    editButton.addEventListener('click', (event) => {
-        event.preventDefault(); // Prevent default button behavior
-        openEditForm(task);
-        console.log('Edit button clicked for task:', task.id);
-    });
-    li.appendChild(editButton);
-
     // Create a nested list for child tasks
     if (taskMap[task.id].children.length > 0) {
         const childList = document.createElement('ul');
@@ -161,14 +212,6 @@ function createTaskElement(task, taskMap) {
     return li;
 }
 
-function openEditForm(task) {
-    document.getElementById('taskName').value = task.name;
-    document.getElementById('parentTaskId').value = task.parentId || '';
-    document.getElementById('taskForm').onsubmit = (event) => {
-        event.preventDefault();
-        updateTask(task.id);
-    };
-}
 
 function updateTask(taskId) {
     const taskName = document.getElementById('taskName').value.trim();
@@ -195,6 +238,23 @@ function updateTask(taskId) {
     }
 }
 
+function updateTaskName(taskId, newName) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.name = newName; // Update task name
+        renderTasks(); // Re-render tasks to reflect changes
+    }
+}
+
+function openEditForm(task) {
+    document.getElementById('taskName').value = task.name;
+    document.getElementById('parentTaskId').value = task.parentId || '';
+    document.getElementById('taskForm').onsubmit = (event) => {
+        event.preventDefault();
+        updateTask(task.id); // Call updateTask directly
+    };
+}
+
 function filterTasks() {
     const filterValue = document.getElementById('statusFilter').value;
     if (filterValue === 'all') return tasks;
@@ -204,17 +264,18 @@ function filterTasks() {
 
 function toggleTaskStatus(taskId) {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    if (!task) return; // Exit if task not found
 
+    // Toggle the task status
     if (task.status === 'IN PROGRESS') {
-        task.status = 'DONE';
-        checkDependenciesStatus(task);
+        task.status = 'DONE'; // Mark as done
+        checkDependenciesStatus(task); // Check dependencies
     } else {
-        task.status = 'IN PROGRESS';
-        updateParentStatus(task);
+        task.status = 'IN PROGRESS'; // Mark as in progress
+        updateParentStatus(task); // Update parent status
     }
 
-    renderTasks();
+    renderTasks(); // Re-render tasks to reflect changes
 }
 
 function checkDependenciesStatus(task) {
