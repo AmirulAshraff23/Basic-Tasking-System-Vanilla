@@ -9,6 +9,9 @@ document.getElementById('taskForm').addEventListener('submit', function(event) {
     
     const taskName = document.getElementById('taskName').value.trim();
     const parentTaskId = document.getElementById('parentTaskId').value.trim();
+    addTask(taskName, parentTaskId);
+    document.getElementById('taskName').value = '';
+    document.getElementById('parentTaskId').value = '';
     
     if (taskName) {
         if (isCircularDependency(parentTaskId)) {
@@ -23,15 +26,15 @@ document.getElementById('taskForm').addEventListener('submit', function(event) {
     }
 });
 
-function addTask(name, parentId) {
+function addTask(taskName, parentTaskId) {
     const newTask = {
-        id: nextId++,
-        name: name,
-        status: 'IN PROGRESS',
-        parentId: parentId ? parseInt(parentId) : null,
-        dependencies: []
+        id: Date.now(),
+        name: taskName,
+        parentId: parentTaskId,
+        status: 'IN_PROGRESS'
     };
     tasks.push(newTask);
+    renderTasks();
 }
 
 function isCircularDependency(parentId) {
@@ -138,7 +141,11 @@ function createTaskElement(task, taskMap) {
     // Create edit button
     const editButton = document.createElement('button');
     editButton.textContent = 'Edit';
-    editButton.addEventListener('click', () => openEditForm(task));
+    editButton.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent default button behavior
+        openEditForm(task);
+        console.log('Edit button clicked for task:', task.id);
+    });
     li.appendChild(editButton);
 
     // Create a nested list for child tasks
