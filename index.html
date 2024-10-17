@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamframe Task Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Task Management System</h1>
+        <div class="filter">
+            <label for="statusFilter">Filter by Status:</label>
+            <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="in-progress">IN PROGRESS</option>
+                <option value="done">DONE</option>
+                <option value="complete">COMPLETE</option>
+            </select>
+        </div>
+        <form id="taskForm">
+            <input type="text" id="taskName" placeholder="Task Name" required>
+            <input type="text" id="parentTaskId" placeholder="Parent Task ID (optional)">
+            <button type="submit">Add Task</button>
+        </form>
+        <ul id="taskList"></ul>
+        <div id="paginationControls"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
